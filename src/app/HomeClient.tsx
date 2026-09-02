@@ -1136,7 +1136,6 @@ const styles: Record<string, CSSProperties> = {
   },
 
   danger: {
-    border: 0,
     borderRadius: 14,
     padding: "13px 22px",
     background: "#fff0f1",
