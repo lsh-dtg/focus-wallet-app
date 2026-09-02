@@ -1,0 +1,1 @@
+{"name":"Focus Wallet","short_name":"Focus Wallet","description":"집중해서 벌고 원하는 휴식을 사는 집중 타이머","start_url":"./","display":"standalone","background_color":"#f6f7fb","theme_color":"#6c63ff","lang":"ko","icons":[{"src":"./icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"./icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
