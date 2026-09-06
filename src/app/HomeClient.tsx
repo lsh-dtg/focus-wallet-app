@@ -5,7 +5,6 @@ import type { CSSProperties } from "react";
 
 import Timeline, {
   loadEntries,
-  saveEntries,
   type TimelineEntry,
 } from "./Timeline";
 
@@ -159,9 +158,12 @@ const [timelineEntries, setTimelineEntries] =
     setS(loaded);
     setGoalInput(loaded.goalMin);
 
-    const timeline = loaded.timeline ?? loadEntries();
-setTimelineEntries(timeline);
+    const timeline =
+  loaded.timeline?.length > 0
+    ? loaded.timeline
+    : loadEntries();
 
+setTimelineEntries(timeline);
     const t = setInterval(() => setNow(Date.now()), 1000);
 
     return () => clearInterval(t);
@@ -222,6 +224,31 @@ setTimelineEntries(timeline);
     if (!s?.focusStartedAt) return;
 
     const sec = focusElapsed();
+        const focusStart = new Date(s.focusStartedAt);
+    const focusEnd = new Date();
+
+    const timelineStart =
+      `${pad(focusStart.getHours())}:${pad(focusStart.getMinutes())}`;
+
+    const timelineEnd =
+      `${pad(focusEnd.getHours())}:${pad(focusEnd.getMinutes())}`;
+
+    const focusEntry: TimelineEntry = {
+      id: `focus-${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}`,
+      date: dateKey(focusStart),
+      start: timelineStart,
+      end: timelineEnd,
+      title: "집중 타이머",
+      category: "focus",
+      createdAt: Date.now(),
+    };
+
+    const nextTimeline = [
+      ...s.timeline,
+      focusEntry,
+    ];
 
     if (sec < 10) {
       setS({
@@ -258,7 +285,7 @@ setTimelineEntries(timeline);
       .filter((d) => d.date !== key)
       .concat({ ...day });
 
-    setS({
+        setS({
       ...s,
       balance: s.balance + earned,
       today: day,
@@ -267,8 +294,21 @@ setTimelineEntries(timeline);
       combo: s.combo + 1,
       streak,
       lastFocusDate: key,
+      timeline: nextTimeline,
     });
-  }
+
+    setTimelineEntries(nextTimeline);
+    save({
+      ...s,
+      balance: s.balance + earned,
+      today: day,
+      days: days.slice(-7),
+      focusStartedAt: null,
+      combo: s.combo + 1,
+      streak,
+      lastFocusDate: key,
+      timeline: nextTimeline,
+    });
 
   function buyRest(minutes: number) {
     if (!s || s.focusStartedAt || s.restStartedAt) return;
@@ -876,6 +916,13 @@ setTimelineEntries(timeline);
           미션 보상은 현재 버전에서 진행도 표시용입니다.
         </div>
       </section>
+
+     <Timeline
+        entries={timelineEntries}
+        onChange={updateTimeline}
+        selectedDate={timelineDate}
+        onDateChange={setTimelineDate}
+      />
 
       <section style={styles.card}>
         <div style={styles.sectionHeader}>
