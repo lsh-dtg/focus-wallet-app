@@ -168,7 +168,6 @@ setTimelineEntries(timeline);
 
     return () => clearInterval(t);
 
-    setGoalInput(loaded.goalMin);
   }, []);
 
   useEffect(() => {
