@@ -296,7 +296,7 @@ setTimelineEntries(timeline);
       lastFocusDate: key,
       timeline: nextTimeline,
     });
-
+  }
     setTimelineEntries(nextTimeline);
     save({
       ...s,
