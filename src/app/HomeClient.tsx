@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 
+import Timeline, {
+  loadEntries,
+  saveEntries,
+  type TimelineEntry,
+} from "./Timeline";
+
 type Day = {
   date: string;
   focusSec: number;
@@ -31,6 +37,8 @@ type State = {
   combo: number;
   streak: number;
   lastFocusDate: string | null;
+
+  timeline: TimelineEntry[];
 };
 
 const KEY = "focus-wallet-pwa-v09";
@@ -80,6 +88,8 @@ function fresh(): State {
     combo: 0,
     streak: 0,
     lastFocusDate: null,
+    
+    timeline: [],
   };
 }
 
@@ -123,6 +133,12 @@ export default function Home() {
   const [installed, setInstalled] = useState(false);
   const [goalInput, setGoalInput] = useState(60);
 
+  const [timelineDate, setTimelineDate] =
+  useState(dateKey());
+
+const [timelineEntries, setTimelineEntries] =
+  useState<TimelineEntry[]>([]);
+
   useEffect(() => {
     const loaded = loadState();
 
@@ -132,6 +148,8 @@ export default function Home() {
     const t = setInterval(() => setNow(Date.now()), 1000);
 
     return () => clearInterval(t);
+
+    setGoalInput(loaded.goalMin);
   }, []);
 
   useEffect(() => {
