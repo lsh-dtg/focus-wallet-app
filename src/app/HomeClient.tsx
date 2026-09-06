@@ -139,6 +139,20 @@ export default function Home() {
 const [timelineEntries, setTimelineEntries] =
   useState<TimelineEntry[]>([]);
 
+ function updateTimeline(entries: TimelineEntry[]) {
+  setTimelineEntries(entries);
+
+  if (!s) return;
+
+  const next = {
+    ...s,
+    timeline: entries,
+  };
+
+  setS(next);
+  save(next);
+} 
+
   useEffect(() => {
     const loaded = loadState();
 
