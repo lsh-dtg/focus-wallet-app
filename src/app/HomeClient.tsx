@@ -36,7 +36,6 @@ type State = {
   combo: number;
   streak: number;
   lastFocusDate: string | null;
-
   timeline: TimelineEntry[];
 };
 
@@ -48,12 +47,17 @@ const OPTIONS = [5, 10, 20, 30];
 const pad = (n: number) => String(n).padStart(2, "0");
 
 const mmss = (s: number) =>
-  `${pad(Math.floor(Math.max(0, s) / 60))}:${pad(Math.max(0, s) % 60)}`;
+  `${pad(Math.floor(Math.max(0, s) / 60))}:${pad(
+    Math.max(0, s) % 60
+  )}`;
 
 const money = (n: number) => n.toLocaleString("ko-KR");
 
 const dateKey = (d = new Date()) => {
-  const x = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  const x = new Date(
+    d.getTime() - d.getTimezoneOffset() * 60000
+  );
+
   return x.toISOString().slice(0, 10);
 };
 
@@ -71,23 +75,30 @@ function fresh(): State {
   return {
     goalMin: 60,
     balance: 0,
+
     today: blank(today),
+
     days: [...Array(6)]
       .map((_, i) => {
         const d = new Date();
         d.setDate(d.getDate() - (6 - i));
+
         return blank(dateKey(d));
       })
       .concat(blank(today)),
+
     passes: [],
+
     focusStartedAt: null,
+
     restStartedAt: null,
     restPassId: null,
     restRemainingAtStart: 0,
+
     combo: 0,
     streak: 0,
     lastFocusDate: null,
-    
+
     timeline: [],
   };
 }
@@ -96,14 +107,22 @@ function loadState(): State {
   try {
     const raw = localStorage.getItem(KEY);
 
-    if (!raw) return fresh();
+    if (!raw) {
+      return fresh();
+    }
 
-    const s = { ...fresh(), ...JSON.parse(raw) } as State;
+    const s = {
+      ...fresh(),
+      ...JSON.parse(raw),
+    } as State;
 
     if (s.today.date !== dateKey()) {
       const old = s.today;
 
-      s.days = [...s.days.filter((d) => d.date !== old.date), old];
+      s.days = [
+        ...s.days.filter((d) => d.date !== old.date),
+        old,
+      ];
 
       s.today = {
         date: dateKey(),
@@ -128,29 +147,32 @@ function save(s: State) {
 
 export default function Home() {
   const [s, setS] = useState<State | null>(null);
+
   const [now, setNow] = useState(Date.now());
+
   const [installed, setInstalled] = useState(false);
+
   const [goalInput, setGoalInput] = useState(60);
 
   const [timelineDate, setTimelineDate] =
-  useState(dateKey());
+    useState(dateKey());
 
-const [timelineEntries, setTimelineEntries] =
-  useState<TimelineEntry[]>([]);
+  const [timelineEntries, setTimelineEntries] =
+    useState<TimelineEntry[]>([]);
 
- function updateTimeline(entries: TimelineEntry[]) {
-  setTimelineEntries(entries);
+  function updateTimeline(entries: TimelineEntry[]) {
+    setTimelineEntries(entries);
 
-  if (!s) return;
+    if (!s) return;
 
-  const next = {
-    ...s,
-    timeline: entries,
-  };
+    const next = {
+      ...s,
+      timeline: entries,
+    };
 
-  setS(next);
-  save(next);
-} 
+    setS(next);
+    save(next);
+  }
 
   useEffect(() => {
     const loaded = loadState();
@@ -159,24 +181,29 @@ const [timelineEntries, setTimelineEntries] =
     setGoalInput(loaded.goalMin);
 
     const timeline =
-  loaded.timeline?.length > 0
-    ? loaded.timeline
-    : loadEntries();
+      loaded.timeline?.length > 0
+        ? loaded.timeline
+        : loadEntries();
 
-setTimelineEntries(timeline);
-    const t = setInterval(() => setNow(Date.now()), 1000);
+    setTimelineEntries(timeline);
+
+    const t = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
 
     return () => clearInterval(t);
-
   }, []);
 
   useEffect(() => {
-    if (s) {
-      save(s);
+    if (!s) return;
 
-      if (s.restStartedAt && restLeft(s, now) <= 0) {
-        finishRest(false);
-      }
+    save(s);
+
+    if (
+      s.restStartedAt &&
+      restLeft(s, now) <= 0
+    ) {
+      finishRest(false);
     }
   }, [
     s?.balance,
@@ -190,22 +217,34 @@ setTimelineEntries(timeline);
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register(`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/sw.js`)
+        .register(
+          `${process.env.NEXT_PUBLIC_BASE_PATH || ""}/sw.js`
+        )
         .catch(() => {});
     }
   }, []);
 
-  function restLeft(st: State, t = Date.now()) {
+  function restLeft(
+    st: State,
+    t = Date.now()
+  ) {
     return Math.max(
       0,
       st.restRemainingAtStart -
-        Math.floor((t - (st.restStartedAt || t)) / 1000)
+        Math.floor(
+          (t - (st.restStartedAt || t)) / 1000
+        )
     );
   }
 
   function focusElapsed() {
     return s?.focusStartedAt
-      ? Math.max(0, Math.floor((now - s.focusStartedAt) / 1000))
+      ? Math.max(
+          0,
+          Math.floor(
+            (now - s.focusStartedAt) / 1000
+          )
+        )
       : 0;
   }
 
@@ -223,24 +262,38 @@ setTimelineEntries(timeline);
     if (!s?.focusStartedAt) return;
 
     const sec = focusElapsed();
-        const focusStart = new Date(s.focusStartedAt);
+
+    const focusStart = new Date(
+      s.focusStartedAt
+    );
+
     const focusEnd = new Date();
 
     const timelineStart =
-      `${pad(focusStart.getHours())}:${pad(focusStart.getMinutes())}`;
+      `${pad(focusStart.getHours())}:${pad(
+        focusStart.getMinutes()
+      )}`;
 
     const timelineEnd =
-      `${pad(focusEnd.getHours())}:${pad(focusEnd.getMinutes())}`;
+      `${pad(focusEnd.getHours())}:${pad(
+        focusEnd.getMinutes()
+      )}`;
 
     const focusEntry: TimelineEntry = {
       id: `focus-${Date.now()}-${Math.random()
         .toString(36)
         .slice(2)}`,
+
       date: dateKey(focusStart),
+
       start: timelineStart,
+
       end: timelineEnd,
+
       title: "집중 타이머",
+
       category: "focus",
+
       createdAt: Date.now(),
     };
 
@@ -250,20 +303,31 @@ setTimelineEntries(timeline);
     ];
 
     if (sec < 10) {
-      setS({
+      const nextState = {
         ...s,
         focusStartedAt: null,
-      });
+      };
+
+      setS(nextState);
+      save(nextState);
+
       return;
     }
 
-    const earned = Math.floor(sec / 60) * FOCUS_RATE;
+    const earned =
+      Math.floor(sec / 60) * FOCUS_RATE;
 
     const day = {
       ...s.today,
-      focusSec: s.today.focusSec + sec,
-      earned: s.today.earned + earned,
-      sessions: s.today.sessions + 1,
+
+      focusSec:
+        s.today.focusSec + sec,
+
+      earned:
+        s.today.earned + earned,
+
+      sessions:
+        s.today.sessions + 1,
     };
 
     const key = dateKey();
@@ -273,7 +337,9 @@ setTimelineEntries(timeline);
     if (sec >= 25 * 60) {
       streak =
         s.lastFocusDate ===
-        dateKey(new Date(Date.now() - 86400000))
+        dateKey(
+          new Date(Date.now() - 86400000)
+        )
           ? streak + 1
           : s.lastFocusDate === key
           ? streak
@@ -284,43 +350,56 @@ setTimelineEntries(timeline);
       .filter((d) => d.date !== key)
       .concat({ ...day });
 
-        setS({
+    const nextState: State = {
       ...s,
-      balance: s.balance + earned,
+
+      balance:
+        s.balance + earned,
+
       today: day,
+
       days: days.slice(-7),
+
       focusStartedAt: null,
-      combo: s.combo + 1,
+
+      combo:
+        s.combo + 1,
+
       streak,
+
       lastFocusDate: key,
+
       timeline: nextTimeline,
-    });
-  }
+    };
+
     setTimelineEntries(nextTimeline);
-    save({
-      ...s,
-      balance: s.balance + earned,
-      today: day,
-      days: days.slice(-7),
-      focusStartedAt: null,
-      combo: s.combo + 1,
-      streak,
-      lastFocusDate: key,
-      timeline: nextTimeline,
-    });
+
+    setS(nextState);
+
+    save(nextState);
+  }
 
   function buyRest(minutes: number) {
-    if (!s || s.focusStartedAt || s.restStartedAt) return;
+    if (!s || s.focusStartedAt || s.restStartedAt) {
+      return;
+    }
 
-    const cost = minutes * REST_RATE;
+    const cost =
+      minutes * REST_RATE;
 
-    if (s.balance < cost) return;
+    if (s.balance < cost) {
+      return;
+    }
 
-    setS({
+    const nextState: State = {
       ...s,
-      balance: s.balance - cost,
+
+      balance:
+        s.balance - cost,
+
       passes: [
         ...s.passes,
+
         {
           id: Date.now(),
           minutes,
@@ -328,42 +407,72 @@ setTimelineEntries(timeline);
           remainingSec: minutes * 60,
         },
       ],
-    });
+    };
+
+    setS(nextState);
+    save(nextState);
   }
 
   function startRest(id: number) {
-    if (!s || s.focusStartedAt || s.restStartedAt) return;
+    if (!s || s.focusStartedAt || s.restStartedAt) {
+      return;
+    }
 
-    const p = s.passes.find((x) => x.id === id);
+    const p = s.passes.find(
+      (x) => x.id === id
+    );
 
     if (!p) return;
 
-    setS({
+    const nextState: State = {
       ...s,
+
       restStartedAt: Date.now(),
+
       restPassId: id,
-      restRemainingAtStart: p.remainingSec,
-    });
+
+      restRemainingAtStart:
+        p.remainingSec,
+    };
+
+    setS(nextState);
+    save(nextState);
   }
 
   function finishRest(manual = true) {
-    if (!s?.restStartedAt || s.restPassId === null) return;
+    if (
+      !s?.restStartedAt ||
+      s.restPassId === null
+    ) {
+      return;
+    }
 
     const used = Math.max(
       0,
+
       s.restRemainingAtStart -
-        Math.floor((Date.now() - s.restStartedAt) / 1000)
+        Math.floor(
+          (Date.now() - s.restStartedAt) /
+            1000
+        )
     );
 
-    const p = s.passes.find((x) => x.id === s.restPassId);
+    const p = s.passes.find(
+      (x) => x.id === s.restPassId
+    );
 
     if (!p) return;
 
-    const remaining = Math.max(0, p.remainingSec - used);
+    const remaining = Math.max(
+      0,
+      p.remainingSec - used
+    );
 
     const day = {
       ...s.today,
-      restSec: s.today.restSec + used,
+
+      restSec:
+        s.today.restSec + used,
     };
 
     const passes =
@@ -377,17 +486,29 @@ setTimelineEntries(timeline);
                   }
                 : x
             )
-            .filter((x) => x.remainingSec > 0)
-        : s.passes.filter((x) => x.id !== p.id);
+            .filter(
+              (x) => x.remainingSec > 0
+            )
+        : s.passes.filter(
+            (x) => x.id !== p.id
+          );
 
-    setS({
+    const nextState: State = {
       ...s,
+
       today: day,
+
       passes,
+
       restStartedAt: null,
+
       restPassId: null,
+
       restRemainingAtStart: 0,
-    });
+    };
+
+    setS(nextState);
+    save(nextState);
   }
 
   function setGoal() {
@@ -395,21 +516,37 @@ setTimelineEntries(timeline);
 
     const goal = Math.max(
       1,
-      Math.min(1440, Math.floor(Number(goalInput) || 60))
+      Math.min(
+        1440,
+        Math.floor(
+          Number(goalInput) || 60
+        )
+      )
     );
 
-    setS({
+    const nextState: State = {
       ...s,
       goalMin: goal,
-    });
+    };
+
+    setS(nextState);
+    save(nextState);
   }
 
   function reset() {
-    if (confirm("기록과 잔액을 모두 초기화할까요?")) {
+    if (
+      confirm(
+        "기록과 잔액을 모두 초기화할까요?"
+      )
+    ) {
       const x = fresh();
 
       setS(x);
+
       setGoalInput(x.goalMin);
+
+      setTimelineEntries([]);
+
       save(x);
     }
   }
@@ -423,15 +560,26 @@ setTimelineEntries(timeline);
   }
 
   const focusSec = focusElapsed();
-  const restSec = s.restStartedAt ? restLeft(s, now) : 0;
+
+  const restSec = s.restStartedAt
+    ? restLeft(s, now)
+    : 0;
 
   const weekly = s.days.reduce(
     (a, d) => ({
-      focusSec: a.focusSec + d.focusSec,
-      earned: a.earned + d.earned,
-      restSec: a.restSec + d.restSec,
-      sessions: a.sessions + d.sessions,
+      focusSec:
+        a.focusSec + d.focusSec,
+
+      earned:
+        a.earned + d.earned,
+
+      restSec:
+        a.restSec + d.restSec,
+
+      sessions:
+        a.sessions + d.sessions,
     }),
+
     {
       focusSec: 0,
       earned: 0,
@@ -440,39 +588,84 @@ setTimelineEntries(timeline);
     }
   );
 
-  const todayMin = Math.floor(s.today.focusSec / 60);
-  const preview = Math.floor(focusSec / 60) * FOCUS_RATE;
-  const max = Math.max(...s.days.map((d) => d.focusSec), 60);
-  const active = !!s.focusStartedAt || !!s.restStartedAt;
+  const todayMin = Math.floor(
+    s.today.focusSec / 60
+  );
+
+  const preview =
+    Math.floor(focusSec / 60) *
+    FOCUS_RATE;
+
+  const max = Math.max(
+    ...s.days.map(
+      (d) => d.focusSec
+    ),
+    60
+  );
+
+  const active =
+    !!s.focusStartedAt ||
+    !!s.restStartedAt;
 
   const goalMin = s.goalMin;
 
   const missions = [
     {
       title: "25분 집중",
-      desc: "한 번에 25분 이상 집중",
-      current: Math.min(25, Math.floor(s.today.focusSec / 60)),
+
+      desc:
+        "한 번에 25분 이상 집중",
+
+      current: Math.min(
+        25,
+        Math.floor(
+          s.today.focusSec / 60
+        )
+      ),
+
       target: 25,
+
       reward: 500,
     },
+
     {
       title: "3세션 달성",
-      desc: "오늘 집중 세션 3회 만들기",
-      current: Math.min(3, s.today.sessions),
+
+      desc:
+        "오늘 집중 세션 3회 만들기",
+
+      current: Math.min(
+        3,
+        s.today.sessions
+      ),
+
       target: 3,
+
       reward: 700,
     },
+
     {
       title: `${goalMin}분 목표`,
-      desc: "오늘 설정한 집중 목표 달성",
-      current: Math.min(goalMin, todayMin),
+
+      desc:
+        "오늘 설정한 집중 목표 달성",
+
+      current: Math.min(
+        goalMin,
+        todayMin
+      ),
+
       target: goalMin,
+
       reward: 1000,
     },
   ];
 
   return (
-    <main className="fw-page" style={styles.page}>
+    <main
+      className="fw-page"
+      style={styles.page}
+    >
       <style>{`
         @media (max-width: 700px){
           .fw-page{
@@ -542,23 +735,36 @@ setTimelineEntries(timeline);
         }
       `}</style>
 
-      <header className="fw-header" style={styles.header}>
+      <header
+        className="fw-header"
+        style={styles.header}
+      >
         <div>
-          <div className="fw-logo" style={styles.logo}>
+          <div
+            className="fw-logo"
+            style={styles.logo}
+          >
             🎯 Focus Wallet
           </div>
 
           <div style={styles.sub}>
-            집중해서 벌고, 원하는 휴식을 사세요.
+            집중해서 벌고, 원하는 휴식을
+            사세요.
           </div>
         </div>
 
-        <button onClick={reset} style={styles.link}>
+        <button
+          onClick={reset}
+          style={styles.link}
+        >
           기록 초기화
         </button>
       </header>
 
-      <section className="fw-grid" style={styles.grid}>
+      <section
+        className="fw-grid"
+        style={styles.grid}
+      >
         <div
           className="fw-card"
           style={{
@@ -566,9 +772,14 @@ setTimelineEntries(timeline);
             ...styles.balance,
           }}
         >
-          <div style={styles.label}>현재 보유금</div>
+          <div style={styles.label}>
+            현재 보유금
+          </div>
 
-          <div className="fw-money" style={styles.money}>
+          <div
+            className="fw-money"
+            style={styles.money}
+          >
             ₩{money(s.balance)}
           </div>
 
@@ -577,7 +788,8 @@ setTimelineEntries(timeline);
             <b>
               {Math.floor(
                 s.passes.reduce(
-                  (a, p) => a + p.remainingSec,
+                  (a, p) =>
+                    a + p.remainingSec,
                   0
                 ) / 60
               )}
@@ -586,7 +798,10 @@ setTimelineEntries(timeline);
           </div>
 
           <div style={styles.goalRow}>
-            <span>🎯 오늘 목표 {goalMin}분</span>
+            <span>
+              🎯 오늘 목표 {goalMin}분
+            </span>
+
             <b>{todayMin}분</b>
           </div>
 
@@ -594,9 +809,11 @@ setTimelineEntries(timeline);
             <div
               style={{
                 ...styles.fill,
+
                 width: `${Math.min(
                   100,
-                  (todayMin / goalMin) * 100
+                  (todayMin / goalMin) *
+                    100
                 )}%`,
               }}
             />
@@ -613,7 +830,9 @@ setTimelineEntries(timeline);
               max="1440"
               value={goalInput}
               onChange={(e) =>
-                setGoalInput(Number(e.target.value))
+                setGoalInput(
+                  Number(e.target.value)
+                )
               }
               style={styles.goalInput}
             />
@@ -633,32 +852,45 @@ setTimelineEntries(timeline);
             style={styles.stats}
           >
             <div>
-              <span style={styles.label}>
+              <span
+                style={styles.label}
+              >
                 오늘 번 돈
               </span>
 
-              <b>₩{money(s.today.earned)}</b>
+              <b>
+                ₩{money(
+                  s.today.earned
+                )}
+              </b>
             </div>
 
             <div>
-              <span style={styles.label}>
+              <span
+                style={styles.label}
+              >
                 오늘 휴식
               </span>
 
               <b>
                 {Math.floor(
-                  s.today.restSec / 60
+                  s.today.restSec /
+                    60
                 )}
                 분
               </b>
             </div>
 
             <div>
-              <span style={styles.label}>
+              <span
+                style={styles.label}
+              >
                 세션
               </span>
 
-              <b>{s.today.sessions}회</b>
+              <b>
+                {s.today.sessions}회
+              </b>
             </div>
           </div>
         </div>
@@ -689,7 +921,9 @@ setTimelineEntries(timeline);
 
           <div style={styles.earn}>
             {s.focusStartedAt
-              ? `이번 세션 예상 ₩${money(preview)}`
+              ? `이번 세션 예상 ₩${money(
+                  preview
+                )}`
               : s.restStartedAt
               ? "잠깐 쉬고 다시 집중해보세요"
               : "집중한 만큼 돈이 쌓입니다"}
@@ -705,7 +939,9 @@ setTimelineEntries(timeline);
               </button>
             ) : s.restStartedAt ? (
               <button
-                onClick={() => finishRest(true)}
+                onClick={() =>
+                  finishRest(true)
+                }
                 style={styles.secondary}
               >
                 휴식 종료
@@ -721,7 +957,8 @@ setTimelineEntries(timeline);
           </div>
 
           <div style={styles.note}>
-            데이터는 이 기기의 브라우저에만 저장됩니다.
+            데이터는 이 기기의 브라우저에만
+            저장됩니다.
           </div>
         </div>
       </section>
@@ -743,22 +980,29 @@ setTimelineEntries(timeline);
               key={min}
               style={styles.shopItem}
             >
-              <div style={styles.shopEmoji}>
+              <div
+                style={styles.shopEmoji}
+              >
                 ☕
               </div>
 
               <b>{min}분</b>
 
               <span>
-                ₩{money(min * REST_RATE)}
+                ₩{money(
+                  min * REST_RATE
+                )}
               </span>
 
               <button
                 disabled={
                   active ||
-                  s.balance < min * REST_RATE
+                  s.balance <
+                    min * REST_RATE
                 }
-                onClick={() => buyRest(min)}
+                onClick={() =>
+                  buyRest(min)
+                }
                 style={styles.secondary}
               >
                 구매
@@ -768,9 +1012,10 @@ setTimelineEntries(timeline);
         </div>
 
         <div style={styles.note}>
-          환율: ₩200 = 휴식 1분 · 하루 사용 한도 없이
-          원하는 만큼 사용할 수 있어요. 구매한 휴식권의
-          남은 시간은 다음날에도 그대로 유지됩니다.
+          환율: ₩200 = 휴식 1분 · 하루 사용
+          한도 없이 원하는 만큼 사용할 수
+          있어요. 구매한 휴식권의 남은 시간은
+          다음날에도 그대로 유지됩니다.
         </div>
       </section>
 
@@ -784,8 +1029,8 @@ setTimelineEntries(timeline);
 
         {!s.passes.length ? (
           <div style={styles.empty}>
-            아직 휴식권이 없습니다. 집중해서 코인을
-            모아보세요.
+            아직 휴식권이 없습니다. 집중해서
+            코인을 모아보세요.
           </div>
         ) : (
           <div style={styles.passList}>
@@ -795,12 +1040,18 @@ setTimelineEntries(timeline);
                 style={styles.pass}
               >
                 <div>
-                  <b>{p.minutes}분 휴식권</b>
+                  <b>
+                    {p.minutes}분
+                    휴식권
+                  </b>
 
-                  <div style={styles.sub}>
+                  <div
+                    style={styles.sub}
+                  >
                     ₩{money(p.cost)} · 남은{" "}
                     {Math.ceil(
-                      p.remainingSec / 60
+                      p.remainingSec /
+                        60
                     )}
                     분
                   </div>
@@ -808,8 +1059,12 @@ setTimelineEntries(timeline);
 
                 <button
                   disabled={active}
-                  onClick={() => startRest(p.id)}
-                  style={styles.primarySmall}
+                  onClick={() =>
+                    startRest(p.id)
+                  }
+                  style={
+                    styles.primarySmall
+                  }
                 >
                   ▶ 사용
                 </button>
@@ -829,7 +1084,9 @@ setTimelineEntries(timeline);
               🔥 오늘의 집중 콤보
             </div>
 
-            <div style={styles.comboBig}>
+            <div
+              style={styles.comboBig}
+            >
               {s.combo}{" "}
               <span>COMBO</span>
             </div>
@@ -843,7 +1100,9 @@ setTimelineEntries(timeline);
             className="fw-streak"
             style={styles.streakBox}
           >
-            <div style={styles.streakNum}>
+            <div
+              style={styles.streakNum}
+            >
               🏆 {s.streak}
             </div>
 
@@ -853,7 +1112,9 @@ setTimelineEntries(timeline);
           </div>
         </div>
 
-        <div style={styles.missionTitle}>
+        <div
+          style={styles.missionTitle}
+        >
           🎯 오늘의 미션
         </div>
 
@@ -864,7 +1125,9 @@ setTimelineEntries(timeline);
           {missions.map((m) => {
             const pct = Math.min(
               100,
-              (m.current / m.target) * 100
+              (m.current /
+                m.target) *
+                100
             );
 
             return (
@@ -872,38 +1135,57 @@ setTimelineEntries(timeline);
                 key={m.title}
                 style={styles.mission}
               >
-                <div style={styles.missionHead}>
+                <div
+                  style={
+                    styles.missionHead
+                  }
+                >
                   <b>{m.title}</b>
 
                   <span>
-                    {m.current >= m.target
+                    {m.current >=
+                    m.target
                       ? "✅"
                       : "진행"}
                   </span>
                 </div>
 
-                <div style={styles.missionDesc}>
+                <div
+                  style={
+                    styles.missionDesc
+                  }
+                >
                   {m.desc}
                 </div>
 
                 <div
-                  style={styles.missionBar}
+                  style={
+                    styles.missionBar
+                  }
                 >
                   <div
                     style={{
                       ...styles.missionFill,
+
                       width: `${pct}%`,
                     }}
                   />
                 </div>
 
-                <div style={styles.missionFoot}>
+                <div
+                  style={
+                    styles.missionFoot
+                  }
+                >
                   <span>
-                    {m.current}/{m.target}
+                    {m.current}/
+                    {m.target}
                   </span>
 
                   <b>
-                    +₩{money(m.reward)}
+                    +₩{money(
+                      m.reward
+                    )}
                   </b>
                 </div>
               </div>
@@ -912,11 +1194,12 @@ setTimelineEntries(timeline);
         </div>
 
         <div style={styles.note}>
-          미션 보상은 현재 버전에서 진행도 표시용입니다.
+          미션 보상은 현재 버전에서 진행도
+          표시용입니다.
         </div>
       </section>
 
-     <Timeline
+      <Timeline
         entries={timelineEntries}
         onChange={updateTimeline}
         selectedDate={timelineDate}
@@ -924,12 +1207,16 @@ setTimelineEntries(timeline);
       />
 
       <section style={styles.card}>
-        <div style={styles.sectionHeader}>
+        <div
+          style={styles.sectionHeader}
+        >
           <h2 style={styles.title}>
             📊 최근 7일 집중 기록
           </h2>
 
-          <span style={styles.weekTotal}>
+          <span
+            style={styles.weekTotal}
+          >
             {Math.floor(
               weekly.focusSec / 60
             )}
@@ -945,17 +1232,27 @@ setTimelineEntries(timeline);
             const h = Math.max(
               4,
               Math.round(
-                (day.focusSec / max) * 150
+                (day.focusSec /
+                  max) *
+                  150
               )
             );
 
-            const dow = new Date(
-              day.date + "T00:00:00"
-            )
-              .toLocaleDateString("ko-KR", {
-                weekday: "short",
-              })
-              .replace("요일", "");
+            const dow =
+              new Date(
+                day.date +
+                  "T00:00:00"
+              )
+                .toLocaleDateString(
+                  "ko-KR",
+                  {
+                    weekday: "short",
+                  }
+                )
+                .replace(
+                  "요일",
+                  ""
+                );
 
             return (
               <div
@@ -969,13 +1266,22 @@ setTimelineEntries(timeline);
                   }}
                 />
 
-                <span style={styles.barLabel}>
+                <span
+                  style={
+                    styles.barLabel
+                  }
+                >
                   {dow}
                 </span>
 
-                <span style={styles.barValue}>
+                <span
+                  style={
+                    styles.barValue
+                  }
+                >
                   {Math.floor(
-                    day.focusSec / 60
+                    day.focusSec /
+                      60
                   )}
                 </span>
               </div>
@@ -988,47 +1294,61 @@ setTimelineEntries(timeline);
           style={styles.weekStats}
         >
           <div>
-            <span style={styles.label}>
+            <span
+              style={styles.label}
+            >
               집중
             </span>
 
             <b>
               {Math.floor(
-                weekly.focusSec / 60
+                weekly.focusSec /
+                  60
               )}
               분
             </b>
           </div>
 
           <div>
-            <span style={styles.label}>
+            <span
+              style={styles.label}
+            >
               획득
             </span>
 
             <b>
-              ₩{money(weekly.earned)}
+              ₩{money(
+                weekly.earned
+              )}
             </b>
           </div>
 
           <div>
-            <span style={styles.label}>
+            <span
+              style={styles.label}
+            >
               휴식
             </span>
 
             <b>
               {Math.floor(
-                weekly.restSec / 60
+                weekly.restSec /
+                  60
               )}
               분
             </b>
           </div>
 
           <div>
-            <span style={styles.label}>
+            <span
+              style={styles.label}
+            >
               세션
             </span>
 
-            <b>{weekly.sessions}회</b>
+            <b>
+              {weekly.sessions}회
+            </b>
           </div>
         </div>
       </section>
@@ -1050,7 +1370,9 @@ setTimelineEntries(timeline);
 
         {!installed && (
           <button
-            onClick={() => setInstalled(true)}
+            onClick={() =>
+              setInstalled(true)
+            }
             style={styles.secondary}
           >
             홈 화면에 추가 안내 보기
@@ -1058,12 +1380,15 @@ setTimelineEntries(timeline);
         )}
 
         {installed && (
-          <div style={styles.installBox}>
+          <div
+            style={styles.installBox}
+          >
             브라우저 메뉴에서{" "}
-            <b>“홈 화면에 추가”</b> 또는{" "}
-            <b>“앱 설치”</b>를 선택하세요. iPhone은
-            Safari의 공유 메뉴 → 홈 화면에 추가를
-            사용하면 됩니다.
+            <b>“홈 화면에 추가”</b>{" "}
+            또는{" "}
+            <b>“앱 설치”</b>를 선택하세요.
+            iPhone은 Safari의 공유 메뉴 →
+            홈 화면에 추가를 사용하면 됩니다.
           </div>
         )}
       </section>
@@ -1071,7 +1396,10 @@ setTimelineEntries(timeline);
   );
 }
 
-const styles: Record<string, CSSProperties> = {
+const styles: Record<
+  string,
+  CSSProperties
+> = {
   page: {
     maxWidth: 1000,
     margin: "0 auto",
@@ -1181,7 +1509,8 @@ const styles: Record<string, CSSProperties> = {
 
   stats: {
     display: "grid",
-    gridTemplateColumns: "repeat(3,1fr)",
+    gridTemplateColumns:
+      "repeat(3,1fr)",
     gap: 10,
     marginTop: 17,
   },
@@ -1190,7 +1519,8 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 86,
     fontWeight: 950,
     letterSpacing: "-.07em",
-    fontVariantNumeric: "tabular-nums",
+    fontVariantNumeric:
+      "tabular-nums",
     margin: "8px 0",
   },
 
@@ -1223,7 +1553,8 @@ const styles: Record<string, CSSProperties> = {
     color: "#b94f5b",
     fontWeight: 900,
     cursor: "pointer",
-    border: "1px solid #ffd3d8",
+    border:
+      "1px solid #ffd3d8",
   },
 
   secondary: {
@@ -1250,12 +1581,14 @@ const styles: Record<string, CSSProperties> = {
 
   shop: {
     display: "grid",
-    gridTemplateColumns: "repeat(4,1fr)",
+    gridTemplateColumns:
+      "repeat(4,1fr)",
     gap: 10,
   },
 
   shopItem: {
-    border: "1px solid #e7eaf0",
+    border:
+      "1px solid #e7eaf0",
     borderRadius: 17,
     padding: 14,
     display: "grid",
@@ -1273,11 +1606,13 @@ const styles: Record<string, CSSProperties> = {
 
   pass: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
     gap: 10,
     padding: 13,
-    border: "1px solid #e7eaf0",
+    border:
+      "1px solid #e7eaf0",
     borderRadius: 15,
   },
 
@@ -1300,7 +1635,8 @@ const styles: Record<string, CSSProperties> = {
 
   sectionHeader: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
   },
 
@@ -1313,19 +1649,23 @@ const styles: Record<string, CSSProperties> = {
   chart: {
     display: "flex",
     alignItems: "flex-end",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     height: 190,
     gap: 8,
     padding: "8px 4px 0",
-    borderBottom: "1px solid #eceef4",
+    borderBottom:
+      "1px solid #eceef4",
   },
 
   barCol: {
     height: 180,
     display: "flex",
-    flexDirection: "column",
+    flexDirection:
+      "column",
     alignItems: "center",
-    justifyContent: "flex-end",
+    justifyContent:
+      "flex-end",
     gap: 5,
     flex: 1,
   },
@@ -1334,7 +1674,8 @@ const styles: Record<string, CSSProperties> = {
     width: "70%",
     maxWidth: 30,
     minHeight: 4,
-    borderRadius: "8px 8px 3px 3px",
+    borderRadius:
+      "8px 8px 3px 3px",
     background: "#6c63ff",
   },
 
@@ -1350,14 +1691,16 @@ const styles: Record<string, CSSProperties> = {
 
   weekStats: {
     display: "grid",
-    gridTemplateColumns: "repeat(4,1fr)",
+    gridTemplateColumns:
+      "repeat(4,1fr)",
     gap: 10,
     marginTop: 14,
   },
 
   gamTop: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     gap: 16,
     alignItems: "center",
     padding: "4px 0 18px",
@@ -1376,7 +1719,8 @@ const styles: Record<string, CSSProperties> = {
     padding: "12px 14px",
     background: "#fff9e8",
     borderRadius: 16,
-    border: "1px solid #f4e5b1",
+    border:
+      "1px solid #f4e5b1",
   },
 
   streakNum: {
@@ -1393,12 +1737,14 @@ const styles: Record<string, CSSProperties> = {
 
   missionGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3,1fr)",
+    gridTemplateColumns:
+      "repeat(3,1fr)",
     gap: 10,
   },
 
   mission: {
-    border: "1px solid #e7eaf0",
+    border:
+      "1px solid #e7eaf0",
     borderRadius: 16,
     padding: 14,
     background: "#fafbff",
@@ -1406,7 +1752,8 @@ const styles: Record<string, CSSProperties> = {
 
   missionHead: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     gap: 8,
     fontSize: 14,
   },
@@ -1433,7 +1780,8 @@ const styles: Record<string, CSSProperties> = {
 
   missionFoot: {
     display: "flex",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     fontSize: 12,
     color: "#737b8c",
     marginTop: 7,
@@ -1449,7 +1797,8 @@ const styles: Record<string, CSSProperties> = {
   goalInput: {
     width: 78,
     padding: "8px 9px",
-    border: "1px solid #dfe3eb",
+    border:
+      "1px solid #dfe3eb",
     borderRadius: 10,
     fontSize: 14,
     fontWeight: 800,
