@@ -159,6 +159,9 @@ const [timelineEntries, setTimelineEntries] =
     setS(loaded);
     setGoalInput(loaded.goalMin);
 
+    const timeline = loaded.timeline ?? loadEntries();
+setTimelineEntries(timeline);
+
     const t = setInterval(() => setNow(Date.now()), 1000);
 
     return () => clearInterval(t);
